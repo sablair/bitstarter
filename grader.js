@@ -1,11 +1,12 @@
 #! /usr/bin/env node
 
-var fs = require('fs');
+var fs = require('fs')
 var program = require('commander');
 var cheerio = require('cheerio');
 var restler = require('restler');
 var HTMLFILE_DEFAULT = "index.html";
 var CHECKSFILE_DEFAULT = "checks.json";
+var MYFILE = "testing.csv";
 
 var assertFileExists = function(infile){
     var instr = infile.toString();
@@ -14,6 +15,8 @@ var assertFileExists = function(infile){
 	console.log("%s does not exist. Exiting.", instr);
 	process.exit(1);
     }
+
+    return instr;
 };
 
 var cheerioHtmlFile = function(htmlfile){
@@ -39,7 +42,16 @@ var clone = function(fn){
     return fn.bind({});
 };
 
-var process = function(){
+var processfn = function(){
+    var response2console = function (result, response){
+	if(result instanceof Error){
+	    console.log("File not created");
+	    process.exit(1);
+	} else {	
+	    fs.writeFileSync(MYFILE, result);
+	}
+    };
+    return response2console;
 };
 
 if(require.main == module){
@@ -49,14 +61,21 @@ if(require.main == module){
     .option('-u, --url <site_url>', 'Site URL')
     .parse(process.argv);
 
-    var checkJson = checkHtmlFile(program.file, program.checks);
+    var file = program.file;
     if(program.url){
-	console.log('URL');
-	restler.get(program.url).on('complete', process);
-    } else {    	
-	var outJson = JSON.stringify(checkJson, null, 4);
-	console.log(outJson);
+	file = MYFILE;
+	restler.get(program.url).on('complete', function (result){
+	    if(result instanceof Error){
+		console.log("Unable to process request");
+	    } else {
+		fs.writeFileSync(MYFILE, result);
+	    }
+	});
     }
+
+    var checkJson = checkHtmlFile(file, program.checks);
+    var outJson = JSON.stringify(checkJson, null, 4);
+    console.log(outJson);
 } else {
     exports.checkHtmlFile = checkHtmlFile;
 }
