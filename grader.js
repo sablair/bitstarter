@@ -76,6 +76,7 @@ if(require.main == module){
     var checkJson = checkHtmlFile(file, program.checks);
     var outJson = JSON.stringify(checkJson, null, 4);
     console.log(outJson);
+    fs.writeFileSync("output.json", outJson)
 } else {
     exports.checkHtmlFile = checkHtmlFile;
 }
